@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>برنامج متابعة العقود والمستأجرين</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0; /* خلفية فاتحة */
+            color: #333; /* لون النص */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden; /* منع التمرير */
+        }
+        .container {
+            background-color: #ffffff; /* لون خلفية الحاوية */
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            width: 700px; /* زيادة عرض الحاوية */
+            position: relative;
+            overflow: hidden; /* منع التمرير */
+        }
+        h1 {
+            text-align: center;
+            color: #333; /* لون النص */
+            font-size: 30px; /* زيادة حجم النص */
+            margin: 10px 0;
+        }
+        h2 {
+            text-align: center;
+            color: #555; /* لون النص */
+            font-size: 22px; /* زيادة حجم النص */
+            margin: 5px 0;
+        }
+        input, button, select {
+            margin: 10px 0;
+            padding: 15px; /* زيادة حجم الحشوة */
+            width: calc(100% - 32px);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 18px; /* تكبير حجم الخط */
+            text-align: center; /* محاذاة النص في المنتصف */
+        }
+        button {
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        button:hover {
+            opacity: 0.8; /* تأثير عند التمرير */
+            transform: scale(1.05); /* تكبير الزر عند التمرير */
+        }
+        .add-button {
+            background-color: #28a745; /* لون زر إضافة */
+            color: #ffffff;
+        }
+        .delete-button {
+            background-color: #dc3545; /* لون زر حذف */
+            color: #ffffff;
+        }
+        .reset-button {
+            background-color: #17a2b8; /* لون زر إعادة تعيين */
+            color: #ffffff;
+            font-size: 16px; /* تصغير حجم الخط */
+            padding: 10px; /* تقليل الحشوة */
+            position: absolute; /* جعل الزر في موضع أعلى اليسار */
+            top: 0px;
+            left: 7px;
+            width: 150px; /* جعل الزر أصغر */
+        }
+		   .exp-button {
+            background-color: #ffa500; /* لون زر إعادة تعيين */
+            color: #ffffff;
+            font-size: 16px; /* تصغير حجم الخط */
+            padding: 10px; /* تقليل الحشوة */
+            position: absolute; /* جعل الزر في موضع أعلى اليسار */
+            top: 0px;
+            right: 7px;
+            width: 150px; /* جعل الزر أصغر */
+        }
+			.imp-button {
+            background-color: #f00000; /* لون زر إعادة تعيين */
+            color: #ffffff;
+            font-size: 16px; /* تصغير حجم الخط */
+            padding: 10px; /* تقليل الحشوة */
+            position: absolute; /* جعل الزر في موضع أعلى اليسار */
+            top: 0px;
+            right: 300px;
+            width: 150px; /* جعل الزر أصغر */
+        }
+        #tenantForm {
+            display: none; /* إخفاء النموذج عند التحميل */
+        }
+        #suggestions {
+            display: none; /* إخفاء اقتراحات الإيجار عند التحميل */
+            margin-top: 10px;
+        }
+        #suggestions p {
+            margin: 5px 0;
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+        }
+        #suggestions p:hover {
+            color: #0056b3; /* لون النص عند التمرير */
+        }
+        #notification {
+            position: absolute;
+            top: 20px; /* موضع أعلى الصفحة */
+            right: 20px; /* موضع إلى اليمين */
+            color: red;
+            font-size: 18px; /* حجم الخط */
+            z-index: 1000; /* لتظهر فوق كل العناصر */
+            display: none; /* إخفاء الإشعارات عند التحميل */
+        }
+        .tenant-info {
+            display: none; /* إخفاء المعلومات عند التحميل */
+            background-color: #e7e7e7; /* لون خلفية المعلومات */
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .no-tenants {
+            display: block; /* إظهار رسالة عدم وجود مستأجرين */
+            text-align: center;
+            font-size: 18px; /* حجم النص */
+            color: #777; /* لون النص */
+        }
+        .days-since-payment {
+            margin-top: 10px; /* إضافة مسافة بين النصوص */
+            font-weight: bold; /* جعل النص غامق */
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="display: none;" id="editContainer">
+		<div id="editTenantForm" style="display: none;">
+    <h3>تعديل معلومات المستأجر</h3>
+    <label for="editName">اسم المستأجر:</label>
+    <input type="text" id="editName"><br>
+<label for="editRent">الإيجار:</label>
+<input type="number" id="editRent" oninput="validateEditRent()"><br>
+<div id="editSuggestions" style="display:none;"></div> <!-- لإظهار الاقتراحات -->
+<label for="editLastPayment">تاريخ آخر تسديد:</label>
+<input type="date" id="editLastPayment" required onkeydown="return false;"><br>
+    <button id="saveButton">حفظ التعديلات</button>
+    <button id="cancelButton">إلغاء</button>
+</div>
+    </div>
+
+
+    <div class="container" id="mainContainer" >
+        <h1>برنامج متابعة العقود والمستأجرين</h1>
+        <h2>شركة بغداد العراق للنقل العام والاستثمارات العقارية</h2>
+        
+        <button id="FormButton" onclick="toggleForm()">إدخال معلومات</button>
+
+        <div id="tenantForm">
+            <label for="name" id="nameLabel">الاسم:</label>
+            <input type="text" id="name" required>
+
+            <label for="rent" id="rentLabel">الإيجار:</label>
+            <input type="number" id="rent" required oninput="validateRent()">
+
+            <div id="suggestions">
+                <!-- Suggestions will be dynamically inserted here -->
+            </div>
+
+<label for="lastPayment" id="lastPaymentLabel">تاريخ آخر تسديد:</label>
+<input type="date" id="lastPayment" required onkeydown="return false;">
+
+            <button class="add-button" onclick="addTenant()">أضف مستأجر</button>
+        </div>
+
+        <select id="tenantList" onchange="displayInfo()">
+            <option value="">-- اختر مستأجر --</option>
+        </select>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+            <button class="delete-button" onclick="deleteTenant()" id="deleteButton" style="display: none;">حذف المستأجر</button>
+        </div>
+
+        <button class="reset-button"  id="resButton" onclick="promptReset()">إعادة تعيين البيانات</button>
+        
+<button onclick="exportToExcel()" id="expButton"  class="exp-button" style="background-color: #ffa500;">تصدير إلى إكسل</button>
+
+ 
+ 
+ <button onclick="importFromExcel()" id="impButton" class="imp-button" style="background-color: #4CAF50;">استيراد من Excel</button>
+<input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;" onchange="handleFile(event)">
+   
+        <div id="output" class="tenant-info"></div>
+        <div id="notification"></div>
+        <div id="noTenantsMessage" class="no-tenants" style="display: none;"></div>
+    </div>
+
+    <audio id="buttonSound" src="button-click.mp3" preload="auto"></audio>
+    <audio id="notificationSound" src="notification.mp3" preload="auto"></audio>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.2/xlsx.full.min.js"></script>
+
+    <script>
+	
+        let tenants = JSON.parse(localStorage.getItem('tenants')) || [];
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('lastPayment').value = today;
+            loadTenants(); // Load tenants on startup
+        });
+
+        function toggleForm() {
+            const form = document.getElementById('tenantForm');
+			    const backButton = document.createElement('button'); // إنشاء زر "رجوع"
+				    // ضبط خصائص زر "رجوع"
+    backButton.id = 'backButton';
+    backButton.textContent = 'رجوع';
+    backButton.style.backgroundColor = '#17a2b8';
+    backButton.style.color = '#ffffff';
+    backButton.style.fontSize = '16px';
+    backButton.style.padding = '5px 5px';
+    backButton.style.position = 'absolute';
+    backButton.style.top = '5px';
+    backButton.style.right = '5px';
+    backButton.style.width = '80px';
+	
+	    backButton.onclick = () => {
+        form.style.display = 'none'; // إخفاء النموذج
+        ShowTenantSelector();
+        showresButton();
+        showButton();
+        backButton.remove(); // إزالة زر "رجوع" عند إخفاء النموذج
+    };
+	
+    if (form.style.display === 'none' || form.style.display === '') {
+        form.style.display = 'block'; // إظهار النموذج
+					hideTenantSelector();
+					hideresButton();
+					hideButton();
+					        document.body.appendChild(backButton); // إضافة زر "رجوع" إلى الصفحة
+
+    } else {
+        form.style.display = 'none'; // إخفاء النموذج
+					ShowTenantSelector();
+					showresButton();
+					showButton();
+					        backButton.remove(); // إزالة زر "رجوع" عند إخفاء النموذج
+
+    } 
+	clearForm(); // Clear input fields when showing the form
+            showLabels(); // Show labels when showing the form
+            playSound('buttonSound'); // Play sound on button click
+        }
+
+        function showLabels() {
+            document.getElementById('nameLabel').style.display = 'block';
+            document.getElementById('rentLabel').style.display = 'block';
+            document.getElementById('lastPaymentLabel').style.display = 'block';
+        }
+		
+		
+						function hideresButton() {
+    document.getElementById('resButton').style.display = 'none'; // إخفاء القائمة المنسدلة
+	    document.getElementById('expButton').style.display = 'none'; // إخفاء القائمة المنسدلة
+			    document.getElementById('impButton').style.display = 'none'; // إخفاء القائمة المنسدلة
+
+
+}
+
+						function showresButton() {
+    document.getElementById('resButton').style.display = 'block'; // إخفاء القائمة المنسدلة
+		    document.getElementById('expButton').style.display = 'block'; // إخفاء القائمة المنسدلة
+				    document.getElementById('impButton').style.display = 'block'; // إخفاء القائمة المنسدلة
+
+
+}
+		
+		
+				function hideButton() {
+    document.getElementById('FormButton').style.display = 'none'; // إخفاء القائمة المنسدلة
+}
+
+				function showButton() {
+    document.getElementById('FormButton').style.display = 'block'; // إخفاء القائمة المنسدلة
+}
+		
+
+        function hideLabels() {
+            document.getElementById('nameLabel').style.display = 'none';
+            document.getElementById('rentLabel').style.display = 'none';
+            document.getElementById('lastPaymentLabel').style.display = 'none';
+        }
+		
+		function hideTenantSelector() {
+    document.getElementById('tenantList').style.display = 'none'; // إخفاء القائمة المنسدلة
+}
+
+		function ShowTenantSelector() {
+    document.getElementById('tenantList').style.display = 'block'; // إخفاء القائمة المنسدلة
+}
+
+        function clearForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('rent').value = '';
+            document.getElementById('lastPayment').value = new Date().toISOString().split('T')[0]; // Reset to today
+            document.getElementById('suggestions').innerHTML = ''; // Clear suggestions
+        }
+
+        function addTenant() {
+            const nameInput = document.getElementById('name').value.trim();
+            const rentInput = document.getElementById('rent').value.trim();
+            const lastPaymentInput = document.getElementById('lastPayment').value;
+
+            if (nameInput === '' || rentInput === '') {
+                showNotification("يرجى ملء جميع الحقول.");
+                return; // Prevent adding if fields are empty
+            }
+
+            if (tenants.some(tenant => tenant.name === nameInput)) {
+                showNotification("المستأجر موجود بالفعل.");
+                return; // Prevent duplicate tenant
+            }
+
+            const tenant = {
+                name: nameInput,
+                rent: parseInt(rentInput.replace(/\D/g, '')), // Store as number
+                lastPayment: lastPaymentInput
+            };
+backButton.remove(); 
+            tenants.push(tenant);
+            localStorage.setItem('tenants', JSON.stringify(tenants));
+            loadTenants(); // Reload tenants to update the select dropdown
+            clearForm(); // Clear input fields
+            hideLabels(); // Hide labels when clearing the form
+            showNotification("تم إضافة المستأجر بنجاح."); // Notification message
+            toggleForm(); // Hide form after adding tenant
+			ShowTenantSelector();
+            playSound('buttonSound'); // Play sound on button click
+            backButton.remove(); // إزالة زر "رجوع" عند إخفاء النموذج
+
+        }
+
+
+function loadTenants() {
+    const tenantList = document.getElementById('tenantList');
+    tenantList.innerHTML = '<option value="">-- اختر مستأجر --</option>'; // Reset options
+
+    if (tenants.length === 0) {
+        document.getElementById('noTenantsMessage').style.display = 'block'; // Show message
+        document.getElementById('deleteButton').style.display = 'none'; // Hide delete button
+    } else {
+        document.getElementById('noTenantsMessage').style.display = 'none'; // Hide message
+        tenants.forEach((tenant, index) => {
+            const option = document.createElement('option');
+            option.value = index; // Use index as value for easy access
+            option.textContent = `${index + 1} - ${tenant.name}`; // Add sequence number with " - "
+            option.style.textAlign = 'right'; // Align text to the right
+            tenantList.appendChild(option);
+        });
+    }
+}
+
+function displayInfo() {
+    const selectedIndex = document.getElementById('tenantList').value;
+    const output = document.getElementById('output');
+    const deleteButton = document.getElementById('deleteButton');
+    const editTenantForm = document.getElementById('editTenantForm');
+
+    if (selectedIndex !== '') {
+        const tenant = tenants[selectedIndex];
+        const daysSincePayment = calculateDaysSincePayment(tenant.lastPayment);
+        
+        // تحديد لون النص بناءً على عدد الأيام
+        const daysColor = daysSincePayment > 30 ? 'red' : 'green';
+
+        output.innerHTML = `
+            <h2 style="text-align: center;">معلومات المستأجر</h2>
+            <button id="backButton" style="background-color: #17a2b8; color: #ffffff; font-size: 12px; padding: 10px 5px; position: absolute; top: 5px; right: 120px; width: 100px; font-size: 16px;">
+                رجوع
+            </button>
+            <button id="editButton" style="background-color: yellow; color: black; font-size: 12px; padding: 10px 5px; position: absolute; top: 5px; right: 5px; width: 100px; font-size: 16px;">
+                تعديل
+            </button>
+            <hr>
+            <strong>المستأجر:</strong> ${tenant.name}<br>
+            <strong>الإيجار:</strong> ${tenant.rent} دينار<br>
+            <strong>تاريخ آخر تسديد:</strong> ${tenant.lastPayment}<br>
+            <span class="days-since-payment" style="color: ${daysColor};">
+                عدد الأيام منذ آخر تسديد: ${daysSincePayment} يوم
+            </span>`;
+
+        // إعداد نموذج التعديل
+        document.getElementById('editName').value = tenant.name;
+        document.getElementById('editRent').value = tenant.rent;
+        document.getElementById('editLastPayment').value = tenant.lastPayment;
+        editTenantForm.style.display = 'none'; // إخفاء نموذج التعديل عند البداية
+
+        // إعداد زر حفظ التعديلات
+document.getElementById('saveButton').onclick = function() {
+    const nameInput = document.getElementById('editName').value.trim();
+    const rentInput = document.getElementById('editRent').value.trim();
+    const lastPaymentInput = document.getElementById('editLastPayment').value;
+
+    // تحقق من ملء جميع الحقول
+    if (nameInput === '' || rentInput === '' || lastPaymentInput === '') {
+        showNotification("يرجى ملء جميع الحقول.");
+        return; // Prevent saving if fields are empty
+    }
+
+    // تحقق من عدم وجود مستأجر بنفس الاسم
+    if (tenants.some(tenant => tenant.name === nameInput && tenant !== tenants[selectedIndex])) {
+        showNotification("المستأجر موجود بالفعل.");
+        return; // Prevent duplicate tenant
+    }
+
+    // تحديث معلومات المستأجر
+    tenant.name = nameInput;
+    tenant.rent = parseFloat(rentInput);
+    tenant.lastPayment = lastPaymentInput;
+
+    // تحديث localStorage
+    localStorage.setItem('tenants', JSON.stringify(tenants));
+
+    // قم بإعادة تحميل المستأجرين بعد التعديل
+    loadTenants();
+    displayInfo(); // عرض المعلومات المحدثة
+    document.getElementById('editContainer').style.display = 'none';
+    document.getElementById('mainContainer').style.display = 'block';
+
+    // إشعار بنجاح عملية الحفظ
+    showNotification("تم حفظ التعديلات بنجاح."); 
+};
+
+
+        document.getElementById('cancelButton').onclick = function() {
+            editTenantForm.style.display = 'none'; // إخفاء نموذج التعديل
+			    document.getElementById('editContainer').style.display = 'none';
+								document.getElementById('mainContainer').style.display = 'block';
+
+        };
+
+        // إعداد زر تعديل المعلومات
+        document.getElementById('editButton').onclick = function() {
+            editTenantForm.style.display = 'block'; // عرض نموذج التعديل
+			    document.getElementById('editContainer').style.display = 'block';
+				document.getElementById('mainContainer').style.display = 'none';
+
+        };
+
+        // إعداد زر العودة
+        document.getElementById('backButton').onclick = function() {
+            deleteButton.style.display = 'none';
+            output.style.display = 'none';
+            editTenantForm.style.display = 'none'; // إخفاء نموذج التعديل
+			    document.getElementById('editContainer').style.display = 'none';
+
+            showButton();
+            showresButton();
+            loadTenants();
+        };
+
+        output.style.display = 'block'; // عرض المعلومات
+        deleteButton.style.display = 'block'; // إظهار زر الحذف عند تحديد مستأجر
+        const form = document.getElementById('tenantForm');
+        form.style.display = 'none';
+        hideButton();
+        hideresButton();
+
+    } else {
+        deleteButton.style.display = 'none'; // إخفاء زر الحذف عند عدم تحديد مستأجر
+        output.style.display = 'none'; // إخفاء المعلومات عند عدم تحديد مستأجر
+        showButton();
+        showresButton();
+        loadTenants();
+    }
+}
+
+function initializeTenants() {
+    const storedTenants = localStorage.getItem('tenants');
+    if (storedTenants) {
+        tenants = JSON.parse(storedTenants);
+    } else {
+        tenants = []; // في حالة عدم وجود بيانات
+    }
+    loadTenants(); // تحميل المستأجرين
+}
+
+// استدعاء الدالة عند تحميل الصفحة
+window.onload = function() {
+    initializeTenants();
+};
+
+
+function exportToExcel() {
+    // Check if there are tenants to export
+    if (tenants.length === 0) {
+        showNotification("لا توجد بيانات للتصدير.");
+        return;
+    }
+
+    // Prepare data for the Excel sheet
+    const data = tenants.map(tenant => ({
+        "اسم المستأجر": tenant.name,
+        "مبلغ الإيجار": tenant.rent,
+        "تاريخ آخر تسديد": tenant.lastPayment,
+        "أيام منذ آخر تسديد": calculateDaysSincePayment(tenant.lastPayment)
+    }));
+
+    // Define workbook and worksheet
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "المستأجرين");
+
+    // Export as Excel file
+    XLSX.writeFile(wb, "بيانات_المستأجرين.xlsx");
+    showNotification("تم تصدير البيانات بنجاح.");
+}
+
+        function calculateDaysSincePayment(lastPayment) {
+            const lastPaymentDate = new Date(lastPayment);
+            const today = new Date();
+            const timeDiff = today - lastPaymentDate; // Time difference in milliseconds
+            return Math.floor(timeDiff / (1000 * 60 * 60 * 24)); // Convert to days
+        }
+
+
+        function deleteTenant() {
+            const tenantList = document.getElementById('tenantList');
+            const selectedIndex = tenantList.value;
+
+            if (selectedIndex === "") return; // Do nothing if no tenant is selected
+
+            tenants.splice(selectedIndex, 1); // Remove the selected tenant
+            localStorage.setItem('tenants', JSON.stringify(tenants)); // Update local storage
+            loadTenants(); // Reload tenants
+            document.getElementById('output').style.display = 'none'; // Hide output
+            document.getElementById('deleteButton').style.display = 'none'; // Hide delete button
+            showNotification("تم حذف المستأجر بنجاح.");
+            playSound('buttonSound'); // Play sound on button click
+					showButton();
+					showresButton();
+        }
+
+function promptReset() {
+    // طلب رمز التأكيد من المستخدم
+    const code = prompt("الرجاء إدخال رمز التأكيد لإعادة التعيين:");
+
+    if (code === '11223344') {
+        if (confirm("هل أنت متأكد أنك تريد إعادة تعيين جميع البيانات؟")) {
+            tenants = [];
+            localStorage.removeItem('tenants'); // مسح التخزين المحلي
+            loadTenants(); // إعادة تحميل قائمة المستأجرين
+            document.getElementById('output').style.display = 'none'; // إخفاء البيانات المعروضة
+            document.getElementById('deleteButton').style.display = 'none'; // إخفاء زر الحذف
+            showNotification("تمت إعادة تعيين البيانات بنجاح");
+            playSound('notificationSound'); // تشغيل صوت الإشعار
+        }
+    } else {
+        showNotification("لم يتم إعادة التعيين"); // إشعار بعدم صحة الرمز
+    }
+}
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.display = 'block'; // Show notification
+            setTimeout(() => {
+                notification.style.display = 'none'; // Hide notification after 3 seconds
+            }, 3000);
+        }
+
+        function playSound(soundId) {
+            const sound = document.getElementById(soundId);
+            sound.currentTime = 0; // Reset sound to start
+            sound.play(); // Play sound
+        }
+
+
+function validateRent() {
+    const rentInput = document.getElementById('rent');
+    const suggestionsDiv = document.getElementById('suggestions');
+    let inputValue = rentInput.value.replace(/\D/g, ''); // إزالة الرموز غير الرقمية
+
+    // منع كتابة الصفر كأول رقم
+    if (inputValue.startsWith('0')) {
+        inputValue = inputValue.substring(1);
+    }
+
+    // السماح بحد أقصى لثلاثة أرقام فقط
+    if (inputValue.length > 9) {
+        inputValue = inputValue.slice(0, 9);
+    }
+
+    rentInput.value = inputValue; // تحديث الحقل بقيمة الإدخال المحدودة
+
+    // إعداد الاقتراحات بناءً على القيمة المدخلة
+    suggestionsDiv.innerHTML = ''; // مسح الاقتراحات السابقة
+    if (inputValue.length > 0) {
+        let suggestions = [];
+        const numValue = parseInt(inputValue); // تحويل القيمة المدخلة إلى عدد صحيح
+
+        // إضافة الاقتراحات بناءً على الرقم المدخل
+        suggestions.push(numValue + ""); // 111000
+
+        // عرض الاقتراحات
+        suggestions.forEach(suggestion => {
+            const formattedSuggestion = formatNumberWithCommas(suggestion); // تنسيق الرقم مع الفواصل
+            const suggestionElement = document.createElement('p');
+            suggestionElement.textContent = "  دينار" + formattedSuggestion ;
+            suggestionElement.onclick = () => {
+                rentInput.value = suggestion; // إزالة الرموز غير الرقمية
+                suggestionsDiv.style.display = 'none'; // إخفاء الاقتراحات بعد التحديد
+            };
+            suggestionsDiv.appendChild(suggestionElement);
+        });
+        suggestionsDiv.style.display = 'block'; // إظهار الاقتراحات
+    } else {
+        suggestionsDiv.style.display = 'none'; // إخفاء الاقتراحات عند عدم وجود قيمة
+    }
+}
+
+// دالة لتنسيق الأرقام مع الفواصل
+function formatNumberWithCommas(number) {
+    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+
+function validateEditRent() {
+    const rentInput = document.getElementById('editRent');
+    const suggestionsDiv = document.getElementById('editSuggestions');
+    let inputValue = rentInput.value.replace(/\D/g, ''); // إزالة الرموز غير الرقمية
+
+    // منع كتابة الصفر كأول رقم
+    if (inputValue.startsWith('0')) {
+        inputValue = inputValue.substring(1);
+    }
+
+    // السماح بحد أقصى لثمانية أرقام فقط
+    if (inputValue.length > 9) {
+        inputValue = inputValue.slice(0, 9);
+    }
+
+    rentInput.value = inputValue; // تحديث الحقل بقيمة الإدخال المحدودة
+
+    // إعداد الاقتراحات بناءً على القيمة المدخلة
+    suggestionsDiv.innerHTML = ''; // مسح الاقتراحات السابقة
+    if (inputValue.length > 0) {
+        let suggestions = [];
+        const numValue = parseInt(inputValue); // تحويل القيمة المدخلة إلى عدد صحيح
+
+        // إضافة الاقتراحات بناءً على الرقم المدخل
+        suggestions.push(numValue + ""); // إضافة الرقم المدخل كاقتراح
+
+        // عرض الاقتراحات
+        suggestions.forEach(suggestion => {
+            const formattedSuggestion = formatNumberWithCommas(suggestion); // تنسيق الرقم مع الفواصل
+            const suggestionElement = document.createElement('p');
+            suggestionElement.textContent = "  دينار " + formattedSuggestion ;
+            suggestionElement.onclick = () => {
+                rentInput.value = suggestion; // إزالة الرموز غير الرقمية
+                suggestionsDiv.style.display = 'none'; // إخفاء الاقتراحات بعد التحديد
+            };
+            suggestionsDiv.appendChild(suggestionElement);
+        });
+        suggestionsDiv.style.display = 'block'; // إظهار الاقتراحات
+    } else {
+        suggestionsDiv.style.display = 'none'; // إخفاء الاقتراحات عند عدم وجود قيمة
+    }
+}
+
+
+function importFromExcel() {
+    document.getElementById("fileInput").click();
+	tenants = [];
+            localStorage.removeItem('tenants'); // مسح التخزين المحلي
+            loadTenants(); // إعادة تحميل قائمة المستأجرين
+			            playSound('notificationSound'); // تشغيل صوت الإشعار
+
+			
+}
+
+function handleFile(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const importedData = XLSX.utils.sheet_to_json(sheet);
+
+        // استيراد البيانات إلى قائمة المستأجرين
+        importedData.forEach(item => {
+            const tenant = {
+                name: item["اسم المستأجر"] || "غير معروف",
+                rent: parseInt(item["مبلغ الإيجار"] || 0),
+                lastPayment: item["تاريخ آخر تسديد"] || new Date().toISOString().split('T')[0]
+            };
+            tenants.push(tenant);
+        });
+
+        // تحديث التخزين المحلي والقائمة
+        localStorage.setItem('tenants', JSON.stringify(tenants));
+        loadTenants();
+        showNotification("تم استيراد البيانات بنجاح.");
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
+
+    </script>
+</body>
+</html>
